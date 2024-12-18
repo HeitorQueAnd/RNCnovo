@@ -1,0 +1,219 @@
+.navigation {
+    text-align: center;
+    margin: 20px 0;
+}
+
+.navigation button {
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    margin: 0 10px;
+    font-size: 16px;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: background-color 0.3s ease;
+}
+
+.navigation button:hover {
+    background-color: #45a049;
+}
+
+.navigation button:focus {
+    outline: none;
+    background-color: #3e8e41;
+}
+/* Geral */
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f9f9f9;
+    margin: 0;
+    padding: 0;
+}
+
+header {
+    background-color: #4CAF50;
+    color: white;
+    padding: 20px;
+    text-align: center;
+}
+
+main {
+    padding: 20px;
+    max-width: 1200px;
+    margin: auto;
+}
+
+/* Estilo dos buckets */
+.bucket {
+    margin-bottom: 40px;
+}
+
+.bucket h2 {
+    color: #333;
+    border-bottom: 2px solid #4CAF50;
+    padding-bottom: 10px;
+}
+
+/* Estilo dos cards */
+.cards {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.card {
+    background-color: white;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    width: calc(33% - 20px);
+    box-sizing: border-box;
+}
+
+.card p {
+    margin: 10px 0;
+    font-size: 14px;
+}
+
+.card strong {
+    font-weight: bold;
+}
+
+.card .atrasado {
+    color: red;
+    font-weight: bold;
+}
+
+.card .pendente {
+    color: orange;
+    font-weight: bold;
+}
+
+.card .finalizado {
+    color: green;
+    font-weight: bold;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .card {
+        width: calc(50% - 20px);
+    }
+}
+
+@media (max-width: 480px) {
+    .card {
+        width: 100%;
+    }
+}
+
+.gravidade-desvio {
+    color: gray;
+}
+
+.gravidade-leve {
+    color: yellow;
+}
+
+.gravidade-media {
+    color: orange;
+}
+
+.gravidade-grave {
+    color: red;
+}
+
+.filtros {
+    display: flex;
+    gap: 10px;
+    margin: 20px 0;
+}
+
+.filtros select, .filtros input {
+    padding: 5px;
+    font-size: 14px;
+}
+
+/* Fundo do modal */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5); /* Fundo semi-transparente */
+    display: flex; /* Flexbox para centralizar */
+    justify-content: center;
+    align-items: center;
+}
+
+
+/* Conteúdo do modal */
+.modal-content {
+    background-color: white;
+    padding: 20px;
+    border-radius: 10px;
+    width: 40%; /* Ajuste conforme necessário */
+    max-width: 500px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3); /* Sombra */
+    overflow-y: auto;
+    position: relative;
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+
+
+/* Botão de fechar */
+.close-button {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 18px;
+    color: #555;
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+.close-button:hover {
+    color: black;
+}
+
+/* Botão de salvar */
+.save-button {
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+    font-size: 16px;
+    border-radius: 5px;
+    margin-top: 20px;
+    transition: background-color 0.3s ease;
+}
+
+.save-button:hover {
+    background-color: #45a049;
+}
+
+/* Animação de aparição */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+body.modal-open #main-content-wrapper {
+    filter: blur(5px); /* Aplica o desfoque */
+    pointer-events: none; /* Impede interações com o fundo */
+}
+

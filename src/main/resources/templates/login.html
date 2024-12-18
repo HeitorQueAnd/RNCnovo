@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Sistema RNC</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+    <h1>Sistema RNC - Login</h1>
+</header>
+<main>
+    <form id="login-form">
+        <div>
+            <label for="nomeUsuario">Nome de Usuário:</label>
+            <input type="text" id="nomeUsuario" name="nomeUsuario" required>
+        </div>
+        <div>
+            <label for="senha">Senha:</label>
+            <input type="password" id="senha" name="senha" required>
+        </div>
+        <button type="submit">Entrar</button>
+    </form>
+    <div id="mensagem"></div>
+</main>
+<script>
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const nomeUsuario = document.getElementById('nomeUsuario').value;
+        const senha = document.getElementById('senha').value;
+
+        const response = await fetch('/api/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams({ nomeUsuario, senha })
+        });
+
+        const mensagem = document.getElementById('mensagem');
+        if (response.ok) {
+            mensagem.textContent = "Login bem-sucedido! Redirecionando...";
+            mensagem.style.color = "green";
+            setTimeout(() => window.location.href = "/home", 2000); // Redireciona para o sistema principal
+        } else {
+            mensagem.textContent = "Credenciais inválidas. Tente novamente.";
+            mensagem.style.color = "red";
+        }
+    });
+    card.innerHTML = `
+    <p><strong>ID:</strong> ${registro.id || 'N/A'}</p>
+    <p><strong>Data Registro:</strong> ${registro.dataReg || 'N/A'}</p>
+    <p><strong>UFV:</strong> ${registro.ufv || 'N/A'}</p>
+    <p><strong>Supervisor:</strong> ${registro.supervisor || 'N/A'}</p>
+`;
+</script>
+</body>
+</html>

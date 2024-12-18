@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualizar Desvios</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+    <h1>Visualizar Desvios</h1>
+</header>
+<div id="main-content-wrapper">
+    <main>
+        <div class="navigation">
+            <button onclick="carregarRegistros('vencidos')">Vencidos</button>
+            <button onclick="carregarRegistros('recebidos')">Recebidos</button>
+            <button onclick="carregarRegistros('em_tratamento')">Em Tratamento</button>
+            <button onclick="carregarRegistros('finalizado')">Finalizado</button>
+            <button onclick="carregarRegistros('nao_conformidade')">Não Conformidade</button>
+        </div>
+        <div class="filtros">
+            <select id="filtro-ufv">
+                <option value="">Todos os UFVs</option>
+            </select>
+            <select id="filtro-grupo">
+                <option value="">Todos os Grupos</option>
+            </select>
+            <input type="text" id="filtro-id" placeholder="Pesquisar ID" />
+            <button onclick="aplicarFiltros()">Filtrar</button>
+        </div>
+        <section class="bucket">
+            <h2 id="bucket-title">Selecione um Bucket</h2>
+            <div class="cards" id="cards-container">
+                <!-- Os registros aparecerão aqui -->
+            </div>
+        </section>
+        <button onclick="baixarRelatorio()">Baixar Relatório PDF</button>
+    </main>
+</div>
+
+<!-- Modal para exibir detalhes do desvio -->
+<div id="modal-registro" class="modal">
+    <div class="modal-content">
+        <button class="close-button" onclick="fecharModal()">&times;</button>
+        <h2>Detalhes do Desvio</h2>
+        <form id="form-registro">
+            <p><strong>ID:</strong> <span id="modal-id"></span></p>
+            <p><strong>Data Registro:</strong> <span id="modal-dataReg"></span></p>
+            <p><strong>UFV:</strong> <span id="modal-ufv"></span></p>
+            <p><strong>Supervisor:</strong> <span id="modal-supervisor"></span></p>
+            <p><strong>Grupo de Ocorrência:</strong> <span id="modal-grupoOcorrencia"></span></p>
+            <p><strong>Ocorrência:</strong> <span id="modal-ocorrencia"></span></p>
+            <p><strong>Gravidade:</strong> <span id="modal-gravidade"></span></p>
+            <p><strong>Status:</strong>
+                <select id="modal-status" disabled>
+                    <option value="Recebido">Recebido</option>
+                    <option value="Em Tratamento">Em Tratamento</option>
+                    <option value="Finalizado">Finalizado</option>
+                </select>
+            </p>
+            <p><strong>Data Acordada:</strong>
+                <input type="date" id="modal-dataAcordada" disabled>
+            </p>
+            <p><strong>Data de Resolução:</strong> <span id="modal-dataResolucao"></span></p>
+            <button type="button" id="salvar-alteracoes" class="save-button" style="display: none;">
+                Salvar Alterações
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+    // Função para carregar registros com filtros
+    async function carregarRegistros(status) {
+        const url = `/api/registros?status=${status}`;
+        const response = await fetch(url);
+        let registros = await response.json();
+
+        aplicarFiltrosInterno(registros); // Aplicar filtros aos registros carregados
+        // Adicionar evento de clique ao card
+        card.addEventListener('click', () => {
+            abrirModal(registro.id);
+        });
+
+    }
+
+    // Função para aplicar filtros manualmente
+    async function aplicarFiltros() {
+        const ufv = document.getElementById("filtro-ufv").value;
+        const grupoOcorrencia = document.getElementById("filtro-grupo").value;
+        const id = document.getElementById("filtro-id").value.trim();
+
+        const params = new URLSearchParams();
+        if (ufv) params.append("ufv", ufv);
+        if (grupoOcorrencia) params.append("grupoOcorrencia", grupoOcorrencia);
+        if (id) params.append("id", id);
+
+        const url = `/api/filtrar?${params.toString()}`;
+        const response = await fetch(url);
+        const registros = await response.json();
+
+        exibirRegistros(registros); // Exibir os registros filtrados
+    }
+
+    // Função interna para aplicar filtros ao carregar registros
+    function aplicarFiltrosInterno(registros) {
+        const filtroUFV = document.getElementById("filtro-ufv").value;
+        const filtroGrupo = document.getElementById("filtro-grupo").value;
+        const filtroID = document.getElementById("filtro-id").value.trim();
+
+        if (filtroUFV) {
+            registros = registros.filter(registro => registro.ufv === filtroUFV);
+        }
+
+        if (filtroGrupo) {
+            registros = registros.filter(registro => registro.grupoOcorrencia === filtroGrupo);
+        }
+
+        if (filtroID) {
+            registros = registros.filter(registro => registro.id.toString().includes(filtroID));
+        }
+
+        exibirRegistros(registros);
+    }
+
+    // Função para exibir registros na página
+    function exibirRegistros(registros, bucket = "Selecionado") {
+        const container = document.getElementById("cards-container");
+        container.innerHTML = ""; // Limpa o container
+
+        if (registros.length === 0) {
+            console.log("Nenhum registro encontrado.");
+            container.innerHTML = `<p class="empty-bucket">Nenhum desvio encontrado.</p>`;
+        } else {
+            registros.forEach((registro, index) => {
+                console.log(`Adicionando registro ${index}:`, registro);
+
+                const diasParaVencimento = calcularDiasParaVencimento(registro.dataAcordada);
+                const isFinalizado = registro.statusReg === "Finalizado";
+
+                // Criar o card
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.innerHTML = `
+                <p><strong>ID:</strong> ${registro.id}</p>
+                <p><strong>Status:</strong> ${registro.statusReg}</p>
+                <p><strong>Data Registro:</strong> ${registro.dataReg}</p>
+                <p><strong>UFV:</strong> ${registro.ufv}</p>
+                <p><strong>Supervisor:</strong> ${registro.supervisor}</p>
+                <p><strong>Grupo de Ocorrência:</strong> ${registro.grupoOcorrencia}</p>
+                <p><strong>Ocorrência:</strong> ${registro.ocorrencia}</p>
+                <p><strong>Gravidade:</strong> <span class="${obterCorGravidade(registro.gravidade)}">${registro.gravidade}</span></p>
+                <p><strong>${isFinalizado ? "Data de Resolução" : "Dias para vencimento"}:</strong>
+                   <span class="${isFinalizado ? "finalizado" : diasParaVencimento.class}">
+                       ${isFinalizado ? registro.dataResolucao : diasParaVencimento.text}
+                   </span>
+                </p>
+            `;
+
+                // Adicionar evento de clique ao card
+                card.addEventListener('click', () => {
+                    console.log(`Card clicado: ID ${registro.id}`);
+                    abrirModal(registro.id);
+                });
+
+                // Adicionar o card ao container
+                container.appendChild(card);
+            });
+        }
+    }
+
+
+
+
+
+
+    // Função para obter a cor com base na gravidade
+    function obterCorGravidade(gravidade) {
+        if (gravidade === "Desvio") return "gravidade-desvio";
+        if (gravidade === "Inconformidade Leve") return "gravidade-leve";
+        if (gravidade === "Inconformidade Média") return "gravidade-media";
+        if (gravidade === "Inconformidade Grave") return "gravidade-grave";
+        return ""; // Caso padrão
+    }
+
+    // Função para carregar opções dinâmicas (UFV e Grupo de Ocorrência)
+    async function carregarOpcoes(campo, seletorId) {
+        const response = await fetch(`/api/opcoes?campo=${campo}`);
+        const opcoes = await response.json();
+
+        const seletor = document.getElementById(seletorId);
+        seletor.innerHTML = `<option value="">Todos</option>`;
+        opcoes.forEach(opcao => {
+            const option = document.createElement('option');
+            option.value = opcao;
+            option.textContent = opcao;
+            seletor.appendChild(option);
+        });
+    }
+
+    // Função para calcular dias para vencimento
+    function calcularDiasParaVencimento(dataAcordada) {
+        const hoje = new Date();
+        const acordada = new Date(dataAcordada);
+        const diffTime = acordada - hoje;
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+        if (diffDays < 0) {
+            return { text: `Atrasado por ${Math.abs(diffDays)} dias`, class: 'atrasado' };
+        } else {
+            return { text: `${diffDays} dias restantes`, class: 'pendente' };
+        }
+    }
+
+    // Carregar opções ao iniciar a página
+    document.addEventListener('DOMContentLoaded', () => {
+        carregarOpcoes('ufv', 'filtro-ufv');
+        carregarOpcoes('grupo_ocorrencia', 'filtro-grupo');
+        carregarRegistros("todos");
+    });
+    async function baixarRelatorio() {
+        const ufv = document.getElementById("filtro-ufv").value;
+        const grupoOcorrencia = document.getElementById("filtro-grupo").value;
+        const id = document.getElementById("filtro-id").value.trim();
+
+        const params = new URLSearchParams();
+        if (ufv) params.append("ufv", ufv);
+        if (grupoOcorrencia) params.append("grupoOcorrencia", grupoOcorrencia);
+        if (id) params.append("id", id);
+
+        const url = `/api/relatorio?${params.toString()}`;
+        const response = await fetch(url);
+
+        if (response.ok) {
+            const blob = await response.blob();
+            const urlBlob = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = urlBlob;
+            link.download = "relatorio_desvios.pdf";
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+        } else {
+            alert("Erro ao gerar o relatório.");
+        }
+    }
+    async function salvarAlteracoes(id) {
+        const status = document.getElementById('modal-status').value;
+        const dataAcordada = document.getElementById('modal-dataAcordada').value;
+
+        const params = new URLSearchParams({ status, dataAcordada });
+        const response = await fetch(`/api/registros/${id}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: params.toString(),
+        });
+
+        if (response.ok) {
+            alert("Alterações salvas com sucesso!");
+            document.getElementById('modal-registro').style.display = 'none';
+            document.body.classList.remove('modal-open'); // Remove o blur
+            carregarRegistros("todos"); // Atualizar a lista
+        } else {
+            const error = await response.text();
+            alert("Erro ao salvar alterações: " + error);
+        }
+    }
+
+
+    function abrirModal(id) {
+        fetch(`/api/registros/${id}`)
+            .then(response => {
+                if (!response.ok) throw new Error("Erro ao carregar os detalhes do desvio.");
+                return response.json();
+            })
+            .then(registro => {
+                // Preencher os campos do modal
+                document.getElementById('modal-id').textContent = registro.id;
+                document.getElementById('modal-dataReg').textContent = registro.dataReg;
+                document.getElementById('modal-ufv').textContent = registro.ufv;
+                document.getElementById('modal-supervisor').textContent = registro.supervisor;
+                document.getElementById('modal-grupoOcorrencia').textContent = registro.grupoOcorrencia;
+                document.getElementById('modal-ocorrencia').textContent = registro.ocorrencia;
+                document.getElementById('modal-gravidade').textContent = registro.gravidade;
+                document.getElementById('modal-status').value = registro.statusReg;
+                document.getElementById('modal-dataAcordada').value = registro.dataAcordada;
+                document.getElementById('modal-dataResolucao').textContent = registro.dataResolucao;
+
+                // Configurar campos editáveis
+                const salvarBtn = document.getElementById('salvar-alteracoes');
+                salvarBtn.style.display = 'none'; // Ocultar o botão por padrão
+                salvarBtn.onclick = null; // Limpar eventos anteriores
+
+                document.getElementById('modal-status').disabled = true;
+                document.getElementById('modal-dataAcordada').disabled = true;
+
+                if (registro.statusReg === "Recebido") {
+                    document.getElementById('modal-status').disabled = false;
+                    document.getElementById('modal-dataAcordada').disabled = false;
+                    salvarBtn.style.display = 'inline-block';
+                    salvarBtn.onclick = () => salvarAlteracoes(id);
+                } else if (registro.statusReg === "Em Tratamento") {
+                    document.getElementById('modal-dataAcordada').disabled = false;
+                    salvarBtn.style.display = 'inline-block';
+                    salvarBtn.onclick = () => salvarAlteracoes(id);
+                }
+
+                // Exibir o modal e aplicar o blur no fundo
+                document.getElementById('modal-registro').style.display = 'flex';
+                document.body.classList.add('modal-open');
+            })
+            .catch(error => alert(error.message));
+    }
+
+
+
+    function fecharModal() {
+        document.getElementById('modal-registro').style.display = 'none'; // Oculta o modal
+        document.body.classList.remove('modal-open'); // Remove o blur
+    }
+
+
+
+</script>
+</body>
+</html>
